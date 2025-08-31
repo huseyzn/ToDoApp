@@ -44,19 +44,20 @@ class ViewController: UIViewController {
         tableView.delegate = self
         datas = coreDataManager.fetchAllToDoItems()
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonTapped))
+        reload()
     }
     
     //MARK: - Add Button Action
     @objc
     func addButtonTapped() {
         
-        let alert = UIAlertController(title: "Add Task", message: "Please Add A Task", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Add Task", message: "Please add a task", preferredStyle: .alert)
         alert.addTextField { tf in
             tf.clearButtonMode = .whileEditing
         }
         let addAction = UIAlertAction(title: "Add", style: .default, handler: { [weak self] _ in
             guard let field = alert.textFields?.first, let text = field.text, !text.isEmpty else {
-                let alert = UIAlertController(title: "Cannot Add Empty Task", message: "Please Add A Task", preferredStyle: .alert)
+                let alert = UIAlertController(title: "Cannot add empty task", message: "Please add a task", preferredStyle: .alert)
                 let ok = UIAlertAction(title: "OK", style: .default)
                 alert.addAction(ok)
                 
@@ -87,16 +88,28 @@ class ViewController: UIViewController {
     @objc
     func longPressed(_ gesture: UILongPressGestureRecognizer) {
         if gesture.state == .began {
-            guard let indexPath = tableView.indexPathForRow(at: gesture.location(in: tableView)) else { return }
-            let itemToChange = datas[indexPath.row]
-            let alert = UIAlertController(title: "Delete or Update Task", message: "This action cannot be undone", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { [weak self] _ in
-                self?.coreDataManager.deleteToDoItem(itemToChange)
-                self?.datas.remove(at: indexPath.row)
-                self?.reload()
-            }))
             
-            let updateAction = UIAlertAction(title: "Update", style: .default) { [weak self] _ in
+            guard let indexPath = tableView.indexPathForRow(at: gesture.location(in: tableView)) else { return }
+            
+            let itemToChange = datas[indexPath.row]
+            
+            let editTaskAlert = UIAlertController(title: "Delete or Update Task", message: "This action cannot be undone", preferredStyle: .alert)
+            let deleteChoiceButton = UIAlertAction(title: "Delete", style: .destructive, handler: { [weak self] _ in
+                
+                let deleteConfirmationAlert = UIAlertController(title: "Are you sure?", message: "This action cannot be undone", preferredStyle: .alert)
+                let deleteButton = UIAlertAction(title: "Yes", style: .destructive, handler: { [weak self] _ in
+                                    self?.coreDataManager.deleteToDoItem(itemToChange)
+                                    self?.datas.remove(at: indexPath.row)
+                                    self?.reload()
+                })
+
+                let noButton = UIAlertAction(title: "No", style: .cancel, handler: nil)
+                deleteConfirmationAlert.addAction(deleteButton)
+                deleteConfirmationAlert.addAction(noButton)
+                self?.present(deleteConfirmationAlert, animated: true)
+            })
+            
+            let updateChoiceButton = UIAlertAction(title: "Update", style: .default) { [weak self] _ in
                 guard let self = self else { return }
                 let alertController = UIAlertController(title: "Update Task", message: nil, preferredStyle: .alert)
                 alertController.addTextField { tf in
@@ -104,12 +117,12 @@ class ViewController: UIViewController {
                     tf.clearButtonMode = .whileEditing
                 }
                 
-                let updateAction = UIAlertAction(title: "Update", style: .default, handler: { [weak self] _ in
+                let updateTaskButton = UIAlertAction(title: "Update", style: .default, handler: { [weak self] _ in
                     
                     guard let tf = alertController.textFields?.first else { return }
                     
                     guard let text = tf.text, !text.isEmpty else {
-                        let alert = UIAlertController(title: "Cannot Update", message: "Please Enter A Task Name", preferredStyle: .alert)
+                        let alert = UIAlertController(title: "Cannot Update", message: "Please enter a task", preferredStyle: .alert)
                         let ok = UIAlertAction(title: "OK", style: .default)
                         alert.addAction(ok)
                         
@@ -124,25 +137,40 @@ class ViewController: UIViewController {
                     
                 })
                 
-                let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+                let cancelButton = UIAlertAction(title: "Cancel", style: .cancel)
                 
-                alertController.addAction(updateAction)
-                alertController.addAction(cancelAction)
+                alertController.addAction(updateTaskButton)
+                alertController.addAction(cancelButton)
                 present(alertController, animated: true)
             }
             
-            alert.addAction(updateAction)
-            alert.addAction(UIAlertAction(title: "Cancel", style: .default))
+            editTaskAlert.addAction(deleteChoiceButton)
+            editTaskAlert.addAction(updateChoiceButton)
+            editTaskAlert.addAction(UIAlertAction(title: "Cancel", style: .default))
             
-            present(alert, animated: true)
+            present(editTaskAlert, animated: true)
         }
     }
     
     //MARK: - Reload TableView Data
     func reload(){
+        
         DispatchQueue.main.async {
+            
             self.tableView.reloadData()
+            if self.datas.isEmpty {
+                let noTaskLabel = UILabel()
+                noTaskLabel.text = "No Task"
+                noTaskLabel.textAlignment = .center
+                noTaskLabel.textColor = .systemGray
+                noTaskLabel.font = .boldSystemFont(ofSize: 30)
+                self.tableView.backgroundView = noTaskLabel
+            } else {
+                self.tableView.backgroundView = nil
+            }
+            
         }
+        
     }
     
 }
@@ -164,12 +192,13 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
             config.text = "No Name - No Date"
         }
         
+        config.textProperties.color = data.isDone ? .systemGreen : .systemOrange
+        
         if data.isDone {
             config.image = UIImage(systemName: "checkmark.circle.fill")
         } else {
             config.image = UIImage(systemName: "circle")
         }
-        
         
         cell.contentConfiguration = config
         cell.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(longPressed)))
@@ -185,6 +214,7 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         present(alert, animated: true)
+        tableView.deselectRow(at: indexPath, animated: true)
     }
     
 }

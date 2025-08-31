@@ -2,7 +2,7 @@
 //  ToDoAppItem+CoreDataProperties.swift
 //  ToDoApp
 //
-//  Created by Huseyin Jafarli on 30.08.25.
+//  Created by Huseyin Jafarli on 31.08.25.
 //
 //
 
@@ -16,8 +16,9 @@ extension ToDoAppItem {
         return NSFetchRequest<ToDoAppItem>(entityName: "ToDoAppItem")
     }
 
-    @NSManaged public var name: String?
     @NSManaged public var createdAt: Date?
+    @NSManaged public var isDone: Bool
+    @NSManaged public var name: String?
 
 }
 
