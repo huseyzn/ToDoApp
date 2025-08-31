@@ -41,6 +41,7 @@ class CoreDataManager {
         let newItem = ToDoAppItem(context: context)
         newItem.name = name
         newItem.createdAt = Date()
+        newItem.isDone = false
         save()
         print("Created Succesfully - Items count: \(fetchAllToDoItems().count)")
         return newItem
@@ -68,4 +69,11 @@ class CoreDataManager {
         save()
         print("Updated Succesfully")
     }
+    
+    func toggleIsDone(_ item: ToDoAppItem) {
+        item.isDone.toggle()
+        save()
+        print("Toggle updated Succesfully")
+    }
+    
 }
