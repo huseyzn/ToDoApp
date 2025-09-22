@@ -17,10 +17,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
         guard let windowScene = (scene as? UIWindowScene) else { return }
+        let loginVM = LoginViewModel()
+        
+        let isDark = UserDefaults.standard.bool(forKey: "isDark")
         
         let window = UIWindow(windowScene: windowScene)
-        let viewController = ViewController()
-        window.rootViewController = UINavigationController(rootViewController: viewController)
+        let _ = HomeVC()
+        let mainVC = loginVM.isLoggedIn ? HomeVC() : LoginVC()
+        window.rootViewController = UINavigationController(rootViewController: mainVC)
+        window.overrideUserInterfaceStyle = isDark ? .dark : .light
         self.window = window
         window.makeKeyAndVisible()
         
